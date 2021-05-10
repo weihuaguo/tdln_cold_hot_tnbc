@@ -46,6 +46,7 @@ for ispt in all_spt_files:
     neighb_df=tmp_df.loc[tmp_df['phenotype'].str.contains(neighbors[0]),:]
     print("\t\t"+str(dt.now()-tst))
 
+    '''
     print("\tCalculating distances...")
     tst=dt.now()
     tmp_dist=distc.cdist(target_df[['Centroid X µm', 'Centroid Y µm']], neighb_df[['Centroid X µm', 'Centroid Y µm']], metric=dist_type)
@@ -58,8 +59,8 @@ for ispt in all_spt_files:
     tst=dt.now()
     tmp_dist.to_pickle(res_dir+"/"+ipid+"_dist_"+out_name+".pkl")
     print("\t\t"+str(dt.now()-tst))
+    '''
 
-    print("\tMelting the distance dataframe...")
     ## NOTE: Split due to the limited RAM!!!
     ## Every 5000 targets one time
     end_point=np.ceil(target_df.shape[0]/5000)
@@ -68,14 +69,26 @@ for ispt in all_spt_files:
     sp=0
     ssst=dt.now()
     for ied in range(1, int(end_point+1)):
-        ep=5000*ied
+        ep=2000*ied
         if ep>target_df.shape[0]:
             ep=target_df.shape[0]
         print("\t\tSubset: "+str(ep))
-        sub_dist=tmp_dist.iloc[sp:ep]
-#        print(sub_dist)
+
+        sub_target=target_df.iloc[sp:ep]
+        print("\tCalculating distances...")
         tst=dt.now()
-        melt_dist = pd.melt(sub_dist, 
+        tmp_dist=distc.cdist(sub_target[['Centroid X µm', 'Centroid Y µm']], neighb_df[['Centroid X µm', 'Centroid Y µm']], metric=dist_type)
+        tmp_dist = pd.DataFrame(tmp_dist, index=["mDC_"+str(x) for x in sub_target.index.values.tolist()], 
+                columns = [neighb_df.iloc[i,-1]+'_'+str(neighb_df.index.values.tolist()[i]) for i in range(0,neighb_df.shape[0])])
+        tmp_dist.reset_index(inplace=True)
+        print("\t\t"+str(dt.now()-tst))
+
+
+#        sub_dist=tmp_dist.iloc[sp:ep]
+#        print(sub_dist)
+        print("\tMelting the distance dataframe...")
+        tst=dt.now()
+        melt_dist = pd.melt(tmp_dist, 
                 value_vars=[neighb_df.iloc[i,-1]+'_'+str(neighb_df.index.values.tolist()[i]) for i in range(0,neighb_df.shape[0])], 
                 id_vars = ['index'])
         print("\t\t"+str(dt.now()-tst))
@@ -99,10 +112,17 @@ for ispt in all_spt_files:
         merge_res['pid']=ipid
         if sp==0:
             final_res=merge_res
+            final_dist=tmp_dist
         else:
             final_res=pd.concat([final_res,merge_res])
-        print(sub_dist.shape)
+            final_dist=pd.concat([final_dist,tmp_dist])
+        print(tmp_dist.shape)
         sp=ep
+    print("\tSaving distance dataframe...")
+    tst=dt.now()
+    final_dist.to_pickle(res_dir+"/"+ipid+"_dist_"+out_name+".pkl")
+    print("\t\t"+str(dt.now()-tst))
+
     print("\t\tTotal time cost for summarization: "+str(dt.now()-ssst))
     final_res.to_csv(res_dir+"/"+ipid+"_neighbor_summary_"+out_name+".csv")
     print(final_res.shape)
