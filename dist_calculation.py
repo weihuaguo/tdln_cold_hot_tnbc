@@ -29,9 +29,10 @@ dist_type = 'euclidean'
 
 fid='*_extracted_spatial_info.csv'
 targets=['mDC']
-neighbors=['Th']
+neighbors=['CD8']
 out_name='center_'+targets[0]+'_ngb_'+neighbors[0]
-dist_cate = [25, 50, 100, 200]
+dist_cate = [25, 50, 100]
+split_step=5000
 
 all_spt_files=glob.glob(data_dir+'/'+fid)
 # print(all_spt_files)
@@ -63,13 +64,13 @@ for ispt in all_spt_files:
 
     ## NOTE: Split due to the limited RAM!!!
     ## Every 5000 targets one time
-    end_point=np.ceil(target_df.shape[0]/5000)
+    end_point=np.ceil(target_df.shape[0]/split_step)
 #    print(end_point)
 #    print(target_df.shape)
     sp=0
     ssst=dt.now()
     for ied in range(1, int(end_point+1)):
-        ep=2000*ied
+        ep=split_step*ied
         if ep>target_df.shape[0]:
             ep=target_df.shape[0]
         print("\t\tSubset: "+str(ep))
@@ -101,21 +102,26 @@ for ispt in all_spt_files:
             tmp_melt=melt_dist.loc[melt_dist['value']<=ids,:]
             ngb_split=tmp_melt['variable'].str.split("_", n=2, expand=True)
             tmp_melt[['ngb', 'ingb']]=tmp_melt['variable'].str.split("_", expand=True)
+            tmp_melt['radius']='Within '+str(ids)+' microns'
             tmp_res=pd.DataFrame(tmp_melt.groupby(['index','ngb'])['value'].describe().reset_index())
             tmp_res['radius']='Within '+str(ids)+' microns'
             if icts==0:
                 merge_res=tmp_res
+                merge_melt=tmp_melt
             else:
                 merge_res=pd.concat([merge_res, tmp_res])
+                merge_melt=pd.concat([merge_melt, tmp_melt])
             icts+=1
             print("\t\t\t\t"+str(dt.now()-dddst))
         merge_res['pid']=ipid
         if sp==0:
             final_res=merge_res
             final_dist=tmp_dist
+            final_melt=merge_melt
         else:
             final_res=pd.concat([final_res,merge_res])
             final_dist=pd.concat([final_dist,tmp_dist])
+            final_melt=pd.concat([final_melt, merge_melt])
         print(tmp_dist.shape)
         sp=ep
     print("\tSaving distance dataframe...")
