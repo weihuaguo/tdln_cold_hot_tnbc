@@ -10,6 +10,7 @@ suppressMessages(library(precrec))
 suppressMessages(library(readxl))
 suppressMessages(library(stringr))
 suppressMessages(library(ggplot2))
+suppressMessages(library(verification))
 
 data_dir <- "/home/weihua/mnts/smb_plee/Group/weihua/tdln_cold_hot_data_hub/ihc"
 
@@ -22,10 +23,16 @@ val_lab <- c(0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1)
 all_mast <- c(dis_mast, val_mast)
 all_lab <- c(dis_lab, val_lab)
 
-#use_score <- join_scores(dis_mast, val_mast, all_mast)
-print("FuckR")
+roc_res_df <- as.data.frame(matrix(ncol = 5, nrow = 3))
+colnames(roc_res_df) <- c("auc", "n", "npos", "nneg", "pval")
+rownames(roc_res_df) <- c("Discovery", "Validation", "ALL")
 
-#use_label <- join_labels(dis_lab, val_lab, all_lab)
+roc_result <- roc.area(obs = dis_lab, pred = dis_mast)
+roc_res_df["Discovery", "auc"] <- roc_result$A
+roc_res_df["Discovery", "n"] <- roc_result$n.total
+roc_res_df["Discovery", "npos"] <- roc_result$n.events
+roc_res_df["Discovery", "nneg"] <- roc_result$n.noevents
+roc_res_df["Discovery", "pval"] <- roc_result$p.value
 
 msmdat <- mmdata(dis_mast, dis_lab, modnames = c("Discovery"))
 msccurves <- evalmod(msmdat)
@@ -41,6 +48,13 @@ dis_roc$cohort <- "Discovery"
 gg <- autoplot(msccurves, curvetype = c("PRC"))
 ggsave(paste(data_dir, "dis_mast_auc_prc.png", sep = "/"), dpi = 300, width = 5, height = 4.2)
 
+roc_result <- roc.area(obs = val_lab, pred = val_mast)
+roc_res_df["Validation", "auc"] <- roc_result$A
+roc_res_df["Validation", "n"] <- roc_result$n.total
+roc_res_df["Validation", "npos"] <- roc_result$n.events
+roc_res_df["Validation", "nneg"] <- roc_result$n.noevents
+roc_res_df["Validation", "pval"] <- roc_result$p.value
+
 msmdat <- mmdata(val_mast, val_lab, modnames = c("Validation"))
 msccurves <- evalmod(msmdat)
 val_auc_curves <- auc(msccurves)
@@ -55,8 +69,14 @@ val_roc$cohort <- "Validation"
 gg <- autoplot(msccurves, curvetype = c("PRC"))
 ggsave(paste(data_dir, "val_mast_auc_prc.png", sep = "/"), dpi = 300, width = 5, height = 4.2)
 
+roc_result <- roc.area(obs = all_lab, pred = all_mast)
+roc_res_df["ALL", "auc"] <- roc_result$A
+roc_res_df["ALL", "n"] <- roc_result$n.total
+roc_res_df["ALL", "npos"] <- roc_result$n.events
+roc_res_df["ALL", "nneg"] <- roc_result$n.noevents
+roc_res_df["ALL", "pval"] <- roc_result$p.value
 
-msmdat <- mmdata(all_mast, all_lab, modnames = c("Validation"))
+msmdat <- mmdata(all_mast, all_lab, modnames = c("All"))
 msccurves <- evalmod(msmdat)
 all_auc_curves <- auc(msccurves)
 write.csv(all_auc_curves, paste(data_dir, "all_mast_auc_results.csv", sep = "/"))
@@ -79,6 +99,7 @@ merge_gg <- ggplot(merge_roc, aes(x = x, y = y, color = cohort, group = cohort))
 	labs(x = "1 - Specificity", y = "Sensitivity", color = "Dataset") +
 	theme_bw()
 ggsave(paste(data_dir, "merged_mast_auc_roc.png", sep = "/"), dpi = 300, width = 5.4, height = 4.2)
+write.csv(roc_res_df, paste(data_dir, "roc_area_statistic_auc_results.csv", sep = "/"))
 
 q(save = "no")
 input_df <- as.data.frame(read_excel(paste(data_dir, "for_auc_input.xlsx", sep = "/")))
