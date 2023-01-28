@@ -61,7 +61,7 @@ val_auc_curves <- auc(msccurves)
 write.csv(val_auc_curves, paste(data_dir, "val_mast_auc_results.csv", sep = "/"))
 
 gg <- autoplot(msccurves, curvetype = c("ROC"))
-ggsave(paste(data_dir, "val_mast_auc_roc.png", sep = "/"), dpi = 300, width = 5, height = 4.2)
+ggsave(paste(data_dir, "val_mast_auc_roc.png", sep = "/"), dpi = 300, width = 3, height = 3)
 pgg <- ggplot_build(gg)
 val_roc <- pgg$data[[1]]
 val_roc$cohort <- "Validation"
