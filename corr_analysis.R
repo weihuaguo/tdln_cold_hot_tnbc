@@ -1,11 +1,7 @@
 library(dplyr)
-library(corrplot)
 library(readxl)
 library(Hmisc)
 library(xlsx)
-library(tcltk)
-library(ComplexHeatmap)
-library(circlize)
 
 flat_cor_mat <- function(cor_r, cor_p){
 	#This function provides a simple formatting of a correlation matrix into a table with 4 columns containing :
@@ -30,7 +26,7 @@ out_dir <- paste(download_dir, "Fig2", sep = "/")
 
 x_file <- paste(in_dir, "Input1_ImmunePanel_ALL_normalized_data_LN.xlsx", sep = "/")
 x_lab <- "LN"
-group_file <- paste(in_dir, "final_grouping_v1.xlsx", sep = "")
+group_file <- paste(in_dir, "Input2_final_grouping_v1.xlsx", sep = "")
 
 ################################
 # Parameter section
@@ -44,9 +40,9 @@ res_type <- "xself" # avsb or aself or bself
 table_filenames <- c("r","p","fm") # fm: flat_matrix
 table_save <- vector(mode="list", length=length(table_filenames))
 names(table_save) <- table_filenames
-table_save["r"] <- paste(out_dir,"corr_coef",igoi,corr_method,data_type,res_type,".csv",sep="/_")
-table_save["p"] <- paste(out_dir,"p_value",igoi,corr_method,data_type,res_type,".csv",sep="/_")
-table_save["fm"] <- paste(out_dir,"flat_corr_res",igoi,corr_method,data_type,res_type,".csv",sep="/_")
+table_save["r"] <- paste(out_dir,"corr_coef",igoi,corr_method,data_type,res_type,".csv",sep="/_") # Input for heatmap_plotter.R
+table_save["p"] <- paste(out_dir,"p_value",igoi,corr_method,data_type,res_type,".csv",sep="/_") # Input for heatmap_plotter.R
+table_save["fm"] <- paste(out_dir,"flat_corr_res",igoi,corr_method,data_type,res_type,".csv",sep="/_") # Output: Supplementary Data 3
 
 # Read x matrix: LN
 x_df <- read_excel(x_file)
