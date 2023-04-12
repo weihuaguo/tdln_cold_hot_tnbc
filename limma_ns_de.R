@@ -7,12 +7,14 @@ suppressMessages(library(readxl))
 suppressMessages(library(xlsx))
 suppressMessages(library(EnhancedVolcano))
 
+download_dir <- "..."# NOTE: Please change the ... into the directory you were saving the data
 
-dir <- ".../FigS1" # NOTE: Please change the ... into the directory you were saving the data
-expr_xlsx <- paste(dir, "Input1_ImmunePanel_ALL_normalized_data_LN.xlsx", sep = "/")
-group_xlsx <- paste(dir, "Input2_final_grouping_v1.xlsx", sep = "/")
-result_xlsx <- paste(dir, "immune_ALL_normalized_log2_limma_LN_results.xlsx", sep = "/") ## Output: Supplementary Data 1
-envol_plot <- paste(dir, "LN_High_vs_Low_EnhancedVolcanol_Immune_Only.png", sep = "/") ## Output: Supplementary Figure 1A
+in_dir <- paste(download_dir, "input_file", sep = "/")
+out_dir <- paste(download_dir, "FigS1", sep = "/")
+expr_xlsx <- paste(in_dir, "Input1_ImmunePanel_ALL_normalized_data_LN.xlsx", sep = "/")
+group_xlsx <- paste(in_dir, "Input2_final_grouping_v1.xlsx", sep = "/")
+result_xlsx <- paste(out_dir, "immune_ALL_normalized_log2_limma_LN_results.xlsx", sep = "/") ## Output: Supplementary Data 1
+envol_plot <- paste(out_dir, "LN_High_vs_Low_EnhancedVolcanol_Immune_Only.png", sep = "/") ## Output: Supplementary Figure 1A
 
 expr_df <- read_excel(expr_xlsx, sheet="log2")
 expr_df <- as.data.frame(expr_df)
