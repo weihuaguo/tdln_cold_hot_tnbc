@@ -28,7 +28,7 @@ flat_cor_mat <- function(cor_r, cor_p){
 download_dir <- "..."# NOTE: Please change the ... into the directory you were saving the data
 
 in_dir <- paste(download_dir, "input_file", sep = "/")
-out_dir <- paste(download_dir, "FigS2", sep = "/")
+out_dir <- paste(download_dir, "FigS2/", sep = "/")
 
 xFile = "Input1_ImmunePanel_ALL_normalized_data_LN.xlsx"
 xLabs = "LN"
@@ -41,14 +41,14 @@ groupXlsx = "Input2_final_grouping_v1.xlsx"
 # Frequent changes
 groi = "high" # NOTE: Need to run for "low" and "high" separatively.
 
-xDf = read_excel(paste(in_dir, xFile, sep = ""))
+xDf = read_excel(paste(in_dir, xFile, sep = "/"))
 xDf = column_to_rownames(xDf, "pid")
 colnames(xDf) = paste0(colnames(xDf), "_", xLabs)
-yDf = read_excel(paste(in_dir, yFile, sep = ""))
+yDf = read_excel(paste(in_dir, yFile, sep = "/"))
 yDf = column_to_rownames(yDf, "pid")
 colnames(yDf) = paste0(colnames(yDf), "_", yLabs)
 
-groupDf = read_excel(paste(in_dir, groupXlsx, sep = ""))
+groupDf = read_excel(paste(in_dir, groupXlsx, sep = "/"))
 
 pidoi = groupDf[groupDf$group == groi, "pid"]
 xoiDf = xDf[pidoi[["pid"]],]
