@@ -30,8 +30,6 @@ download_dir <- "..."# NOTE: Please change the ... into the directory you were s
 in_dir <- paste(download_dir, "input_file", sep = "/")
 out_dir <- paste(download_dir, "FigS2", sep = "/")
 
-dataDir = "/home/weihua/mnts/group_plee/Weihua/nanostring_results/outline_and_lists/"
-resDir = "/home/weihua/mnts/group_plee/Weihua/nanostring_results/least_one_results/"
 xFile = "Input1_ImmunePanel_ALL_normalized_data_LN.xlsx"
 xLabs = "LN"
 yFile = "Input1_ImmunePanel_ALL_normalized_data_LN.xlsx"
@@ -78,9 +76,9 @@ for (ipid in pidoi[["pid"]]) {
   flatRes = flat_cor_mat(corR, corP)
   
   message("\tStart to output results...")
-  rPrefix = paste(resDir, groi, "_", xLabs, "_vs_", yLabs, "_", ipid, "_removed_r.csv", sep = "")
-  pPrefix = paste(resDir, groi, "_", xLabs, "_vs_", yLabs, "_", ipid, "_removed_p.csv", sep = "")
-  fPrefix = paste(resDir, groi, "_", xLabs, "_vs_", yLabs, "_", ipid, "_removed_flat.csv", sep = "")
+  rPrefix = paste(out_dir, groi, "_", xLabs, "_vs_", yLabs, "_", ipid, "_removed_r.csv", sep = "")
+  pPrefix = paste(out_dir, groi, "_", xLabs, "_vs_", yLabs, "_", ipid, "_removed_p.csv", sep = "")
+  fPrefix = paste(out_dir, groi, "_", xLabs, "_vs_", yLabs, "_", ipid, "_removed_flat.csv", sep = "")
   
   write.csv(corR, file = rPrefix)
   write.csv(corP, file = pPrefix)
