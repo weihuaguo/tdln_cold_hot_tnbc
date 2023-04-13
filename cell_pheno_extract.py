@@ -18,7 +18,7 @@ import scipy.spatial.distance as ssd
 download_dir = "..."# NOTE: Please change the ... into the directory you were saving the data
 
 in_dir = download_dir+"/input_file"
-out_dir = download_dir+"/Fig3"
+out_dir = download_dir+"/Fig3/annotated_detection"
 
 detect_dir=in_dir+"/qupath_detection" # Detection result directory
 fid='*_qupath_cell_classifier_results.txt'
