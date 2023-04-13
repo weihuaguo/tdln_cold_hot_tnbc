@@ -48,7 +48,7 @@ for ispt in all_spt_files:
     print("\tReading spatial information...")
     tst=dt.now()
     tmp_df=pd.read_csv(ispt, index_col=0)
-    target_df=tmp_df.loc[tmp_df['phenotype']==targets[0],:] # TODO: Multiple targets
+    target_df=tmp_df.loc[tmp_df['phenotype']==targets[0],:]
     neighb_df=tmp_df.loc[tmp_df['phenotype'].str.contains(neighbors[0]),:]
     print("\t\t"+str(dt.now()-tst))
 
