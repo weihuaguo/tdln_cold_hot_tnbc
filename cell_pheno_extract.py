@@ -15,14 +15,16 @@ import datetime as dt
 import itertools as its
 import scipy.spatial.distance as ssd
 
-detect_dir="/home/weihua/mnts/data_plee/Group/Joyce/12195_patient_sample/export_all_cell_detection_lndc" # Detection result directory
-output_dir="/home/weihua/mnts/data_plee/Group/weihua/dc_lamp_ln/post_qupath/extract_spatial_info"
+download_dir = "..."# NOTE: Please change the ... into the directory you were saving the data
+
+in_dir = download_dir+"/input_file"
+out_dir = download_dir+"/Fig3"
+
+detect_dir=in_dir+"/qupath_detection" # Detection result directory
 fid='*_qupath_cell_classifier_results.txt'
-targets=['mDC']
 
 all_detect_files=glob.glob(detect_dir+'/'+fid)
-cell_pheno_chart=pd.read_excel(output_dir+"/panel_cell_type_annot_v2.xlsx", index_col=0,
-        engine='openpyxl')
+cell_pheno_chart=pd.read_excel(in_dir+"/Input3_panel_cell_type_annot_v2.xlsx", index_col=0, engine='openpyxl')
 
 print("Prepare for cell phenotype merging...\n")
 cell_pheno_dict={}
@@ -70,7 +72,6 @@ for idf in all_detect_files:
 #    print(tmp_df['phenotype'].value_counts())
     cln_df=tmp_df.loc[~tmp_df['Class'].isna(),:]
     cln_df=cln_df.loc[cln_df['phenotype']!='Others',:]
-    cln_df.to_csv(output_dir+"/"+ipid+"_extracted_detection.csv")
+    cln_df.to_csv(out_dir+"/"+ipid+"_extracted_detection.csv")
     cln_spt_df=cln_df[['Image', 'Class', 'Centroid X µm', 'Centroid Y µm', 'pid', 'phenotype']]
-    cln_spt_df.to_csv(output_dir+"/"+ipid+"_extracted_spatial_info.csv")
-
+    cln_spt_df.to_csv(out_dir+"/"+ipid+"_extracted_spatial_info.csv") 
