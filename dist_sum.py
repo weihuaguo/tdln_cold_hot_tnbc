@@ -29,23 +29,23 @@ import pandas as pd
 import numpy as np
 from datetime import datetime as dt
 
-data_dir="/home/weihua/mnts/data_plee/Group/weihua/dc_lamp_ln/post_qupath/extract_spatial_info"
-input_dir="/home/weihua/mnts/data_plee/Group/weihua/dc_lamp_ln/post_qupath/dist_comp"
-output_dir="/home/weihua/mnts/data_plee/Group/weihua/dc_lamp_ln/post_qupath/dist_sum"
+download_dir = "..."# NOTE: Please change the ... into the directory you were saving the data
 
+in_dir = download_dir+"/Fig3"
+out_dir = download_dir+"/Fig3"
+
+data_dir=in_dir+"/annotated_detection"
+input_dir=out_dir+"/distance"
 dist_type = 'euclidean'
+data_dir="/home/weihua/mnts/data_plee/Group/weihua/dc_lamp_ln/post_qupath/extract_spatial_info"
 
-fid='*_extracted_spatial_info.csv'
 targets=['mDC']
-neighbors=['CD8']
+neighbors=['Th'] # NOTE: the neighbor options are 'CD8' and 'mDC' which need to be run separatively
 out_name='center_'+targets[0]+'_ngb_'+neighbors[0]
-dist_cate = [25, 50, 100, 200]
+dist_cate = [25]
 
-case_info=pd.read_excel("/home/weihua/mnts/data_plee/Group/weihua/dc_lamp_ln/post_qupath/patient_annotation_v2.xlsx", sheet_name='Sheet1')
+case_info=pd.read_excel(download_dir+"/input_file/Input4_patient_annotation_v2.xlsx", sheet_name='Sheet1')
 print(case_info)
-
-all_spt_files=glob.glob(data_dir+'/'+fid)
-all_dist_files=glob.glob(input_dir+"/*_dist_"+out_name+".pkl")
 all_dist_files=glob.glob(input_dir+"/*_neighbor_summary_"+out_name+".csv")
 
 # print(all_dist_files)
@@ -78,8 +78,8 @@ for idf in all_dist_files:
     else:
         merge_res=pd.concat([merge_res, tmp_res])
     ic+=1
-merge_res.to_csv(output_dir+'/all_avg_distance_perSample_perDC_results.csv')
+merge_res.to_csv(out_dir+'/'+out_name+'all_avg_distance_perSample_perDC_results.csv')
 
 final_res=merge_res.groupby(['ngb','radius','cohort'],as_index=False).apply(final_mean_return)
 print(final_res)
-final_res.to_csv(output_dir+'/all_avg_distance_perCohort_perSample_perDC_results.csv')
+final_res.to_csv(out_dir+'/'+out_name+'all_avg_distance_perCohort_perSample_perDC_results.csv')
