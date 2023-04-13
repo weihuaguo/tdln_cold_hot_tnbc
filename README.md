@@ -2,6 +2,7 @@
 Scripts for comparing tumor draining lymph nodes with cold and hot primary triple negative breast tumors
 RT: Run time based on a i9-9900KF CPU + 64GB RAM computer with Ubuntu LTS 20.04 OS.
 Anaconda based virtual environment was used to run all the following scripts. Detailed package versions are available in Methods section of the manuscript.
+All the used data are available here: https://drive.google.com/drive/folders/1bG7IpHZjx3txoMxHlIhmpsuNHncNfHuQ?usp=sharing
 
 1. limma_ns_de.R (RT ~ 3 mins)
 Gene differential expression analysis (SF1 + SD1)
