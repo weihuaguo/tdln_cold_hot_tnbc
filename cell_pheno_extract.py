@@ -16,15 +16,19 @@ import itertools as its
 import scipy.spatial.distance as ssd
 
 download_dir = "..."# NOTE: Please change the ... into the directory you were saving the data
+download_dir = "/home/weihua/mnts/smb_plee/Group/weihua/tdln_cold_hot_data_hub/ihc"# NOTE: Please change the ... into the directory you were saving the data
 
-in_dir = download_dir+"/input_file"
-out_dir = download_dir+"/Fig3/annotated_detection"
+panel_dir = download_dir+"/mDC_Th_Panel"
+out_dir = panel_dir+"/annotated_detections"
 
-detect_dir=in_dir+"/qupath_detection" # Detection result directory
+detect_dir=panel_dir+"/detections" # Detection result directory
 fid='*_qupath_cell_classifier_results.txt'
 
 all_detect_files=glob.glob(detect_dir+'/'+fid)
-cell_pheno_chart=pd.read_excel(in_dir+"/Input3_panel_cell_type_annot_v2.xlsx", index_col=0, engine='openpyxl')
+cell_pheno_chart=pd.read_excel(panel_dir+"/Input3_panel_cell_type_annot_v2.xlsx", index_col=0, engine='openpyxl')
+annot_df=pd.read_table(panel_dir+"/mDC_Th_qupath_annotations.tsv")
+annot_df.drop(annot_df[annot_df['Name'] != "LN"].index, inplace=True)
+print(annot_df)
 
 print("Prepare for cell phenotype merging...\n")
 cell_pheno_dict={}
@@ -47,7 +51,7 @@ for ict, ir in cell_pheno_chart.iterrows():
     if len(list(set(all_classes)&set(all_classes_oi)))!=0:
         warning("Overlapped cell phenotyping!!!")
     all_classes_oi+=all_classes
-# print(cell_pheno_dict)
+print(cell_pheno_dict)
 
 print("Start to extract the spatial information...\n")
 for idf in all_detect_files:
@@ -60,6 +64,11 @@ for idf in all_detect_files:
     tmp_df['pid']=ipid
     tmp_df['phenotype']='Others'
     tmp_df.loc[tmp_df['Class'].isna(),'phenotype']='Unknown'
+    img_mask = annot_df['Image'] == tmp_df['Image'].unique()[0]
+    tmp_df['Area um2']=annot_df['Area µm^2'].loc[img_mask.index[img_mask]].tolist()[0]
+    tmp_df['Perimeter um']=annot_df['Perimeter µm'].loc[img_mask.index[img_mask]].tolist()[0]
+    tmp_df['Num detection']=annot_df['Num Detections'].loc[img_mask.index[img_mask]].tolist()[0]
+
     print("\t::Reading cost "+str(dt.datetime.now()-tst))
     # Cell phenotype merging
     print("\tMerging the phenotypes...")
