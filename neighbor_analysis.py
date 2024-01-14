@@ -21,10 +21,12 @@ nn_dir = panel_dir+"/nearest_neighbors"
 
 fid='*_extracted_detection.csv'
 all_detect_files=glob.glob(in_dir+'/'+fid)
-frs=[10,20,30,40,50]
+frs=[10,20,30,40,50,75,100]
+frs=[75,100]
+frs=[125, 150, 200]
 
-fr_flag=False
-nn_flag=True
+fr_flag=True
+nn_flag=False
 
 print("Start to extract the spatial information...\n")
 for idf in all_detect_files:
@@ -47,7 +49,11 @@ for idf in all_detect_files:
                 ph_df['dist']=ssd.cdist(XA=[[tmp_x, tmp_y]], XB=ph_df.loc[:,ph_df.columns.str.contains('Centroid')])[0]
                 ph_df = ph_df.loc[ph_df['dist'] > 0.0,:]
                 min_idx = ph_df[['dist']].idxmin().tolist()
+                print(min_idx)
+                print(ph_df)
                 nn_df[iph].iloc[ir]=ph_df[['dist']].loc[min_idx[0]]
+                print(nn_df)
+                exit()
         nn_df.to_csv(nn_dir+"/"+ipid+"_nearest_neighbor_distances.csv")
 
     if fr_flag:
