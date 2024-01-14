@@ -14,14 +14,73 @@ fr_dir <- paste(panel_dir, "fixed_radius", sep = "/")
 nn_dir <- paste(panel_dir, "nearest_neighbors", sep = "/")
 
 frs <- c(10,20,30,40,50)
+frs <- c(10,20,30,40,50,75,100,125,150,200)
+
 smp_df <- as.data.frame(read_excel(paste(panel_dir, "sample_annotation_ihc_discovery.xlsx", sep = "/")))
 
 fr_flag <- F
 merge_fr_flag <- F
 vis_fr_flag <- F
-nn_flag <- T
-merge_nn_flag <- F
-vis_nn_flag <- T
+nn_flag <- F
+merge_nn_flag <- T
+vis_nn_flag <- F
+th21_nn_flag <- T
+th21_vis_nn_flag <- T
+
+if (th21_nn_flag) {
+	if (merge_nn_flag) {
+		c <- 0
+		all_res <- list.files(nn_dir, pattern = "nearest_neighbor_distances")
+		for (ifile in all_res) {
+			cat(ifile, "\n")
+			df <- read.csv(paste(nn_dir, ifile, sep = "/"), row.names = 1, check.names = F)
+			th21_df <- df[df$phenotype %in% c("Th2", "Th1", "CD8+"),]
+			print(head(th21_df))
+			mdc_df <- as.data.frame(matrix(ncol = length(frs), nrow = nrow(th21_df)))
+			rownames(mdc_df) <- rownames(th21_df)
+			colnames(mdc_df) <- paste("mdc_within_", frs, sep = "")
+			for (ifr in frs) {
+				mdc_df[,paste("mdc_within_", ifr, sep = "")] <- ifelse(th21_df$mDC <= ifr, paste("Within", ifr, "um"), "No")
+			}
+
+			mdc_df <- merge(th21_df, mdc_df, by = "row.names", all.x = T)
+			print(head(mdc_df))
+
+			if (c == 0) {
+				merge_mdc_df <- mdc_df
+			} else {
+				merge_mdc_df <- rbind(merge_mdc_df, mdc_df)
+			}
+			c <- c+1
+		}
+		write.csv(merge_mdc_df, paste(nn_dir, "/merge_nn_th21_fr2mdc_df_cellwise.csv", sep = ""))
+	}
+	if (th21_vis_nn_flag) {
+		mdc_df <- read.csv(paste(nn_dir, "/merge_nn_th21_fr2mdc_df_cellwise.csv", sep = ""), row.names = 1, check.names = F)
+		mdc_df <- mdc_df %>% group_by(Image, phenotype) %>% mutate(n_th = n())
+		gath_df <- gather(mdc_df, "dist_cutoff", "status", colnames(mdc_df)[str_detect(colnames(mdc_df), "_within_")])
+		print(head(gath_df))
+		sum_df <- gath_df %>%
+			group_by(Image, phenotype, dist_cutoff, status) %>%
+			summarize(n = n(), n_th = mean(n_th))
+		sum_df$rel <- sum_df$n/sum_df$n_th*100
+		sum_df$sld_id <- str_replace_all(str_split_fixed(sum_df$Image, "x", n = 2)[,1], "-", "_")
+		sum_df <- merge(sum_df, smp_df, by = "sld_id", all.x = T)
+		sum_df <- sum_df[sum_df$status != "No",]
+		sum_df$dist_cutoff <- factor(sum_df$dist_cutoff, levels = paste("mdc_within_", frs, sep = ""))
+		write.csv(sum_df, paste(nn_dir, "/merge_nn_th21_fr2med_df_summary.csv", sep = ""))
+
+		box_gg <- ggplot(sum_df, aes(x = cohort, y = rel, color = cohort)) +
+			geom_boxplot() +
+			geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
+			stat_compare_means(aes(group = cohort), label = "p.format") +
+			facet_grid(phenotype~dist_cutoff, scales = 'free') +
+			labs(y = "Th percentage with nearest mDC in x um") +
+			theme_bw()
+		ggsave(paste(nn_dir, "/merge_nn_boxplot_th_pct_with_mdc_in_fr.png", sep = ""), dpi = 300, width = 16, height = 12)
+
+	}
+}
 
 if (nn_flag) {
 	if (merge_nn_flag) {
@@ -44,13 +103,13 @@ if (nn_flag) {
 			}
 			c <- c+1
 		}
-		write.csv(merge_mdc_df, paste(fr_dir, "/merge_nn_mdc_df_cellwise.csv", sep = ""))
+		write.csv(merge_mdc_df, paste(nn_dir, "/merge_nn_mdc_df_cellwise.csv", sep = ""))
 	}
+
 	if (vis_nn_flag) {
-		mdc_df <- read.csv(paste(fr_dir, "/merge_nn_mdc_df_cellwise.csv", sep = ""), row.names = 1, check.names = F)
+		mdc_df <- read.csv(paste(nn_dir, "/merge_nn_mdc_df_cellwise.csv", sep = ""), row.names = 1, check.names = F)
 		print(head(mdc_df))
 
-		#TODO: distance ratio calculation
 		dist_ratio_df <- mdc_df
 		dist_ratio_df$th21_dr <- dist_ratio_df$Th2/dist_ratio_df$Th1
 
