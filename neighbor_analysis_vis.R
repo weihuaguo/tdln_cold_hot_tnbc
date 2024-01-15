@@ -15,17 +15,19 @@ nn_dir <- paste(panel_dir, "nearest_neighbors", sep = "/")
 
 frs <- c(10,20,30,40,50)
 frs <- c(10,20,30,40,50,75,100,125,150,200)
+frs <- c(10,20,30,40,50,75,100)
+
 
 smp_df <- as.data.frame(read_excel(paste(panel_dir, "sample_annotation_ihc_discovery.xlsx", sep = "/")))
 
-fr_flag <- F
+fr_flag <- T
 merge_fr_flag <- F
-vis_fr_flag <- F
+vis_fr_flag <- T
 nn_flag <- F
-merge_nn_flag <- T
+merge_nn_flag <- F
 vis_nn_flag <- F
-th21_nn_flag <- T
-th21_vis_nn_flag <- T
+th21_nn_flag <- F
+th21_vis_nn_flag <- F
 
 if (th21_nn_flag) {
 	if (merge_nn_flag) {
@@ -277,7 +279,7 @@ if (fr_flag) {
 	if (merge_fr_flag) {
 		for (ifr in frs) {
 			cat("\t", ifr, "\n")
-			all_res <- list.files(fr_dir, pattern = paste("fr", ifr, sep = ""))
+			all_res <- list.files(fr_dir, pattern = paste("fr", ifr, "_", sep = ""))
 			print(all_res)
 			c <- 0
 			for (ifile in all_res) {
@@ -303,7 +305,14 @@ if (fr_flag) {
 				)
 				mdc_df$total_th2 <- sum(df$phenotype == "Th2")
 				mdc_df$total_th1 <- sum(df$phenotype == "Th1")
+				mdc_df$total_cd8t <- sum(df$phenotype == "CD8+")
 
+				t_df <- df[df$phenotype %in% c("Th1", "Th2", "CD8+"),]
+				t_df <- t_df[t_df$mDC>0,]
+				mdc_df$around_th2 <- sum(t_df$phenotype == "Th2")
+				mdc_df$around_th1 <- sum(t_df$phenotype == "Th1")
+				mdc_df$around_cd8t <- sum(t_df$phenotype == "CD8+")
+				
 # TODO: based on relative Th2 and Th1 numbers divided by total Th2/Th1 cell numbers
 
 	#			mdc_t_df <- mdc_df[,c("CD8+", "Th1", "Th2")]
@@ -336,48 +345,117 @@ if (fr_flag) {
 
 			sum_df <- fr_df %>% 
 				group_by(Image) %>%
-				summarize(Th1 = sum(Th1), Th2 = sum(Th2), total_th1 = mean(total_th1), total_th2 = mean(total_th2))
-			sum_df$th21_ratio <- sum_df$Th2/sum_df$Th1
+				summarize(sum_around_th1 = sum(Th1), sum_around_th2 = sum(Th2), sum_around_cd8t = sum(`CD8+`),
+					  avg_around_th1 = mean(Th1), avg_around_th2 = mean(Th2), avg_around_cd8t = mean(`CD8+`),
+					  true_around_th1 = mean(around_th1), true_around_th2 = mean(around_th2), true_around_cd8t = mean(around_cd8t),
+					  total_th1 = mean(total_th1), total_th2 = mean(total_th2), total_cd8t = mean(total_cd8t))
 			sum_df$sld_id <- str_replace_all(str_split_fixed(sum_df$Image, "x", n = 2)[,1], "-", "_")
 			sum_df <- merge(sum_df, smp_df, by = "sld_id", all.x = T)
-			sum_df$r_th1 <- sum_df$Th1/sum_df$total_th1
-			sum_df$r_th2 <- sum_df$Th2/sum_df$total_th2
-			sum_df$r_th21_ratio <- sum_df$r_th2/sum_df$r_th1
+			sum_df$true_th21_around_ratio <- sum_df$true_around_th2/sum_df$true_around_th1
+			sum_df$total_th21_ratio <- sum_df$total_th2/sum_df$total_th1
+			sum_df$true_around_th2_pct <- sum_df$true_around_th2/sum_df$total_th2*100
+			sum_df$true_around_th1_pct <- sum_df$true_around_th1/sum_df$total_th1*100
+			sum_df$true_around_cd8t_pct <- sum_df$true_around_th2/sum_df$total_cd8t*100
+			sum_df$true_around_th2_total_mdc <- sum_df$true_around_th2/nrow(fr_df)
+			sum_df$true_around_th1_total_mdc <- sum_df$true_around_th1/nrow(fr_df)
+			sum_df$true_around_cd8t_total_mdc <- sum_df$true_around_cd8t/nrow(fr_df)
+
+			sum_df$total_th2_total_mdc <- sum_df$total_th2/nrow(fr_df)
+			sum_df$total_th1_total_mdc <- sum_df$total_th1/nrow(fr_df)
+			sum_df$total_cd8t_total_mdc <- sum_df$total_cd8t/nrow(fr_df)
+
+			write.csv(sum_df, paste(fr_dir, "/merge_fr_", ifr, "_sample_wise_summary.csv", sep = ""))
+
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = true_th21_around_ratio, color = cohort)) +
+				geom_boxplot() +
+				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
+				stat_compare_means(aes(group = cohort), label = "p.format") +
+				labs(title = paste("Fixed radius:", ifr), y = "Th2/Th1 around mDC") +
+				theme_bw()
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_true_th21_around_ratio.png", sep = ""), dpi = 300, width = 3, height = 6)
+
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = total_th21_ratio, color = cohort)) +
+				geom_boxplot() +
+				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
+				stat_compare_means(aes(group = cohort), label = "p.format") +
+				labs(title = paste("Fixed radius:", ifr), y = "Th2/Th1 total") +
+				theme_bw()
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_true_th21_total_ratio.png", sep = ""), dpi = 300, width = 3, height = 6)
+
+
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = true_around_th2_pct, color = cohort)) +
+				geom_boxplot() +
+				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
+				stat_compare_means(aes(group = cohort), label = "p.format") +
+				labs(title = paste("Fixed radius:", ifr), y = "Th2 percentage around mDC\n(To total Th2 cell number)") +
+				theme_bw()
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_th2_pct_around_mdc.png", sep = ""), dpi = 300, width = 3, height = 6)
+
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = true_around_th1_pct, color = cohort)) +
+				geom_boxplot() +
+				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
+				stat_compare_means(aes(group = cohort), label = "p.format") +
+				labs(title = paste("Fixed radius:", ifr), y = "Th1 percentage around mDC\n(To total Th1 cell number)") +
+				theme_bw()
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_th1_pct_around_mdc.png", sep = ""), dpi = 300, width = 3, height = 6)
+
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = true_around_cd8t_pct, color = cohort)) +
+				geom_boxplot() +
+				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
+				stat_compare_means(aes(group = cohort), label = "p.format") +
+				labs(title = paste("Fixed radius:", ifr), y = "CD8T percentage around mDC\n(To total CD8T cell number)") +
+				theme_bw()
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_cd8t_pct_around_mdc.png", sep = ""), dpi = 300, width = 3, height = 6)
+
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = true_around_th2_total_mdc, color = cohort)) +
+				geom_boxplot() +
+				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
+				stat_compare_means(aes(group = cohort), label = "p.format") +
+				labs(title = paste("Fixed radius:", ifr), y = "Relative Th2 around mDC\n(To total mDC number)") +
+				theme_bw()
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_th2_around_mdc_to_mdc.png", sep = ""), dpi = 300, width = 3, height = 6)
+
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = true_around_th1_total_mdc, color = cohort)) +
+				geom_boxplot() +
+				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
+				stat_compare_means(aes(group = cohort), label = "p.format") +
+				labs(title = paste("Fixed radius:", ifr), y = "Relative Th1 around mDC\n(To total mDC number)") +
+				theme_bw()
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_th1_around_mdc_to_mdc.png", sep = ""), dpi = 300, width = 3, height = 6)
+
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = true_around_cd8t_total_mdc, color = cohort)) +
+				geom_boxplot() +
+				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
+				stat_compare_means(aes(group = cohort), label = "p.format") +
+				labs(title = paste("Fixed radius:", ifr), y = "Relative CD8T around mDC\n(To total mDC number)") +
+				theme_bw()
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_cd8t_around_mdc_to_mdc.png", sep = ""), dpi = 300, width = 3, height = 6)
+
 #			print(head(sum_df))
-#			q(save = "no")
-
-			box_gg <- ggplot(sum_df, aes(x = cohort, y = r_th1, color = cohort)) +
+			q(save = "no")
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = avg_around_th1, color = cohort)) +
 				geom_boxplot() +
 				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
 				stat_compare_means(aes(group = cohort), label = "p.format") +
-				labs(title = paste("Fixed radius:", ifr), y = "Th1 around mDC%") +
+				labs(title = paste("Fixed radius:", ifr), y = "Average Th1 cell numbers around mDC") +
 				theme_bw()
-			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_sum_rel_th1.png", sep = ""), dpi = 300, width = 3, height = 6)
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_avg_th1.png", sep = ""), dpi = 300, width = 3, height = 6)
 
-			box_gg <- ggplot(sum_df, aes(x = cohort, y = r_th2, color = cohort)) +
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = avg_around_th2, color = cohort)) +
 				geom_boxplot() +
 				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
 				stat_compare_means(aes(group = cohort), label = "p.format") +
-				labs(title = paste("Fixed radius:", ifr), y = "Th2 around mDC%") +
+				labs(title = paste("Fixed radius:", ifr), y = "Average Th2 cell numbers around mDC") +
 				theme_bw()
-			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_sum_rel_th2.png", sep = ""), dpi = 300, width = 3, height = 6)
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_avg_th2.png", sep = ""), dpi = 300, width = 3, height = 6)
 
-
-			box_gg <- ggplot(sum_df, aes(x = cohort, y = th21_ratio, color = cohort)) +
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = avg_around_cd8t, color = cohort)) +
 				geom_boxplot() +
 				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
 				stat_compare_means(aes(group = cohort), label = "p.format") +
-				labs(title = paste("Fixed radius:", ifr), y = "Th2/Th1 ratio") +
+				labs(title = paste("Fixed radius:", ifr), y = "Average CD8+ T cell numbers around mDC") +
 				theme_bw()
-			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_sum_th21_ratio.png", sep = ""), dpi = 300, width = 3, height = 6)
-
-			box_gg <- ggplot(sum_df, aes(x = cohort, y = r_th21_ratio, color = cohort)) +
-				geom_boxplot() +
-				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
-				stat_compare_means(aes(group = cohort), label = "p.format") +
-				labs(title = paste("Fixed radius:", ifr), y = "Relative Th2/Th1 ratio") +
-				theme_bw()
-			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_sum_rel_th21_ratio.png", sep = ""), dpi = 300, width = 3, height = 6)
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_avg_cd8t.png", sep = ""), dpi = 300, width = 3, height = 6)
 
 
 			cat("\tAll mDCs\n")
@@ -404,6 +482,8 @@ if (fr_flag) {
 				labs(title = paste("Fixed radius:", ifr), y = "Relative to all mDCs") +
 				theme_bw()
 			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_total_mdc_percentage.png", sep = ""), dpi = 300, width = 6, height = 6)
+			write.csv(gath_df, paste(fr_dir, "/merge_fr_", ifr, "_sample_wise_all_mdc_gather.csv", sep = ""))
+
 
 			cat("\tmDCs excluding the no Th cell around\n")
 			mdc_cts_df <- fr_df %>%
@@ -431,7 +511,7 @@ if (fr_flag) {
 				labs(title = paste("Fixed radius:", ifr), y = "Realtive to mDCs with Th around") +
 				theme_bw()
 			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_tharound_mdc_percentage.png", sep = ""), dpi = 300, width = 6, height = 6)
-
+			write.csv(gath_df, paste(fr_dir, "/merge_fr_", ifr, "_sample_wise_withthonly_mdc_gather.csv", sep = ""))
 		}
 	}
 }
