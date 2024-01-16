@@ -313,18 +313,6 @@ if (fr_flag) {
 				mdc_df$around_th1 <- sum(t_df$phenotype == "Th1")
 				mdc_df$around_cd8t <- sum(t_df$phenotype == "CD8+")
 				
-# TODO: based on relative Th2 and Th1 numbers divided by total Th2/Th1 cell numbers
-
-	#			mdc_t_df <- mdc_df[,c("CD8+", "Th1", "Th2")]
-	#			mdc_df$t_flag <- colnames(mdc_t_df)[apply(mdc_t_df, 1, which.max)]
-	#			mdc_df$abs_def <- ifelse(mdc_df$both0_flag == "Both0", "No T cells", mdc_df$t_flag)
-
-	#			mdc_t_df <- mdc_df[,c("r_CD8+", "r_Th1", "r_Th2")]
-	#			mdc_df$r_t_flag <- colnames(mdc_t_df)[apply(mdc_t_df, 1, which.max)]
-	#			mdc_df$rel_def <- ifelse(mdc_df$both0_flag == "Both0", "No T cells", mdc_df$r_t_flag)
-			
-	#			print(head(mdc_df))
-
 				if (c == 0) {
 					merge_mdc_df <- mdc_df
 				} else {
@@ -432,7 +420,7 @@ if (fr_flag) {
 			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_cd8t_around_mdc_to_mdc.png", sep = ""), dpi = 300, width = 3, height = 6)
 
 #			print(head(sum_df))
-			q(save = "no")
+#			q(save = "no")
 			box_gg <- ggplot(sum_df, aes(x = cohort, y = avg_around_th1, color = cohort)) +
 				geom_boxplot() +
 				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
