@@ -13,6 +13,7 @@ import scipy.spatial.distance as ssd
 
 download_dir = "..."# NOTE: Please change the ... into the directory you were saving the data
 download_dir = "/home/weihua/mnts/smb_plee/Group/weihua/tdln_cold_hot_data_hub/ihc"# NOTE: Please change the ... into the directory you were saving the data
+download_dir = "/net/nfs-irwrsrchnas01/labs/plee/Group/weihua/tdln_cold_hot_data_hub/ihc"
 
 panel_dir = download_dir+"/mDC_Th_Panel"
 in_dir = panel_dir+"/annotated_detections"
@@ -24,6 +25,7 @@ all_detect_files=glob.glob(in_dir+'/'+fid)
 frs=[10,20,30,40,50,75,100]
 frs=[75,100]
 frs=[125, 150, 200]
+frs=[25]
 
 fr_flag=True
 nn_flag=False
