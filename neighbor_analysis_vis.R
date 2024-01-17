@@ -15,7 +15,8 @@ nn_dir <- paste(panel_dir, "nearest_neighbors", sep = "/")
 
 frs <- c(10,20,30,40,50)
 frs <- c(10,20,30,40,50,75,100,125,150,200)
-frs <- c(10,20,30,40,50,75,100)
+frs <- c(10,20,25,30,40,50,75,100)
+frs <- c(25,50,75,100)
 
 
 smp_df <- as.data.frame(read_excel(paste(panel_dir, "sample_annotation_ihc_discovery.xlsx", sep = "/")))
@@ -279,7 +280,7 @@ if (fr_flag) {
 	if (merge_fr_flag) {
 		for (ifr in frs) {
 			cat("\t", ifr, "\n")
-			all_res <- list.files(fr_dir, pattern = paste("fr", ifr, "_", sep = ""))
+			all_res <- list.files(fr_dir, pattern = paste("_fr", ifr, "_", sep = ""))
 			print(all_res)
 			c <- 0
 			for (ifile in all_res) {
@@ -328,9 +329,23 @@ if (fr_flag) {
 		for (ifr in frs) {
 			cat(ifr, "\n")
 			fr_df <- read.csv(paste(fr_dir, "/merge_fr_", ifr, "_cellwise.csv", sep = ""), check.names = F, row.names = 1)
-			print(head(fr_df))
 			fr_df <- fr_df %>% group_by(Image) %>% mutate(total_mdc = n())
+			cat("Let's get back to cell-wise comparison\n")
+			fr_df$cw_th21_ratio <- ifelse(fr_df$Th1 == 0, (fr_df$Th2+1)/(fr_df$Th1+1), fr_df$Th2/fr_df$Th1)
+			fr_df$cw_r_th21_ratio <- ifelse(fr_df$r_Th1 == 0, (fr_df$r_Th2+0.01)/(fr_df$r_Th1+0.01), fr_df$r_Th2/fr_df$r_Th1)
 
+			fr_df$sld_id <- str_replace_all(str_split_fixed(fr_df$Image, "x", n = 2)[,1], "-", "_")
+			fr_df <- merge(fr_df, smp_df, by = "sld_id", all.x = T)
+			cw_df <- fr_df %>%
+				group_by(cohort) %>%
+				summarize(n_mdc = n(),
+					  avg_cw_th21_ratio = mean(cw_th21_ratio),
+					  avg_cw_r_th21_ratio = mean(cw_r_th21_ratio),
+					  median_cw_th21_ratio = median(cw_th21_ratio),
+					  median_cw_r_th21_ratio = median(cw_r_th21_ratio)
+
+				)
+			write.csv(cw_df, paste(fr_dir, "/merge_fr_", ifr, "_cell_wise_th21_ratio_summary.csv", sep = ""))
 			sum_df <- fr_df %>% 
 				group_by(Image) %>%
 				summarize(sum_around_th1 = sum(Th1), sum_around_th2 = sum(Th2), sum_around_cd8t = sum(`CD8+`),
@@ -343,6 +358,7 @@ if (fr_flag) {
 			sum_df$total_th21_ratio <- sum_df$total_th2/sum_df$total_th1
 			sum_df$true_around_th2_pct <- sum_df$true_around_th2/sum_df$total_th2*100
 			sum_df$true_around_th1_pct <- sum_df$true_around_th1/sum_df$total_th1*100
+			sum_df$true_around_th21_pct_ratio <- sum_df$true_around_th2_pct/sum_df$true_around_th1_pct
 			sum_df$true_around_cd8t_pct <- sum_df$true_around_th2/sum_df$total_cd8t*100
 			sum_df$true_around_th2_total_mdc <- sum_df$true_around_th2/nrow(fr_df)
 			sum_df$true_around_th1_total_mdc <- sum_df$true_around_th1/nrow(fr_df)
@@ -353,6 +369,15 @@ if (fr_flag) {
 			sum_df$total_cd8t_total_mdc <- sum_df$total_cd8t/nrow(fr_df)
 
 			write.csv(sum_df, paste(fr_dir, "/merge_fr_", ifr, "_sample_wise_summary.csv", sep = ""))
+
+			box_gg <- ggplot(sum_df, aes(x = cohort, y = true_around_th21_pct_ratio, color = cohort)) +
+				geom_boxplot() +
+				geom_point(position = position_jitterdodge(dodge.width = 0.7)) +
+				stat_compare_means(aes(group = cohort), label = "p.format") +
+				labs(title = paste("Fixed radius:", ifr), y = "Relative Th2/Th1 around mDC") +
+				theme_bw()
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_boxplot_true_around_th21_pct_ratio.png", sep = ""), dpi = 300, width = 3, height = 6)
+
 
 			box_gg <- ggplot(sum_df, aes(x = cohort, y = true_th21_around_ratio, color = cohort)) +
 				geom_boxplot() +
