@@ -359,7 +359,7 @@ if (fr_flag) {
 			sum_df$true_around_th2_pct <- sum_df$true_around_th2/sum_df$total_th2*100
 			sum_df$true_around_th1_pct <- sum_df$true_around_th1/sum_df$total_th1*100
 			sum_df$true_around_th21_pct_ratio <- sum_df$true_around_th2_pct/sum_df$true_around_th1_pct
-			sum_df$true_around_cd8t_pct <- sum_df$true_around_th2/sum_df$total_cd8t*100
+			sum_df$true_around_cd8t_pct <- sum_df$true_around_cd8t/sum_df$total_cd8t*100
 			sum_df$true_around_th2_total_mdc <- sum_df$true_around_th2/nrow(fr_df)
 			sum_df$true_around_th1_total_mdc <- sum_df$true_around_th1/nrow(fr_df)
 			sum_df$true_around_cd8t_total_mdc <- sum_df$true_around_cd8t/nrow(fr_df)
