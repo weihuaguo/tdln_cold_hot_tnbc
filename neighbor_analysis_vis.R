@@ -16,8 +16,6 @@ nn_dir <- paste(panel_dir, "nearest_neighbors", sep = "/")
 frs <- c(10,20,30,40,50)
 frs <- c(10,20,30,40,50,75,100,125,150,200)
 frs <- c(10,20,25,30,40,50,75,100)
-frs <- c(25,50,75,100)
-
 
 smp_df <- as.data.frame(read_excel(paste(panel_dir, "sample_annotation_ihc_discovery.xlsx", sep = "/")))
 
@@ -333,19 +331,36 @@ if (fr_flag) {
 			cat("Let's get back to cell-wise comparison\n")
 			fr_df$cw_th21_ratio <- ifelse(fr_df$Th1 == 0, (fr_df$Th2+1)/(fr_df$Th1+1), fr_df$Th2/fr_df$Th1)
 			fr_df$cw_r_th21_ratio <- ifelse(fr_df$r_Th1 == 0, (fr_df$r_Th2+0.01)/(fr_df$r_Th1+0.01), fr_df$r_Th2/fr_df$r_Th1)
+			fr_df$cw_th21_diff <- fr_df$Th2-fr_df$Th1
+			fr_df$cw_r_th_diff <- fr_df$r_Th2-fr_df$r_Th1
 
 			fr_df$sld_id <- str_replace_all(str_split_fixed(fr_df$Image, "x", n = 2)[,1], "-", "_")
 			fr_df <- merge(fr_df, smp_df, by = "sld_id", all.x = T)
+
 			cw_df <- fr_df %>%
 				group_by(cohort) %>%
 				summarize(n_mdc = n(),
+					  avg_r_th2 = mean(r_Th2),
+					  avg_r_th1 = mean(r_Th1),
+					  std_r_th2 = sd(r_Th2),
+					  std_r_th1 = sd(r_Th1),
 					  avg_cw_th21_ratio = mean(cw_th21_ratio),
 					  avg_cw_r_th21_ratio = mean(cw_r_th21_ratio),
+					  avg_cw_r_th_diff = mean(cw_r_th_diff),
 					  median_cw_th21_ratio = median(cw_th21_ratio),
 					  median_cw_r_th21_ratio = median(cw_r_th21_ratio)
 
 				)
 			write.csv(cw_df, paste(fr_dir, "/merge_fr_", ifr, "_cell_wise_th21_ratio_summary.csv", sep = ""))
+
+			plot_df <- fr_df
+
+			pr_gg <- ggpaired(plot_df, cond1 = "r_Th1", cond2 = "r_Th2", fill = "condition", facet.by = "cohort", line.color = "gray") +
+				labs(x = "T helper cell type", y = paste("Relative abundances of Th cells within", ifr, "um (mDC per dot)")) +
+				scale_y_continuous(trans='log10') +
+				stat_compare_means(paired = TRUE, method = "t.test")
+			ggsave(paste(fr_dir, "/merge_fr_", ifr, "_cell_wise_pair_th2_vs_th1.png", sep = ""), dpi = 300, width = 6, height = 6)
+
 			sum_df <- fr_df %>% 
 				group_by(Image) %>%
 				summarize(sum_around_th1 = sum(Th1), sum_around_th2 = sum(Th2), sum_around_cd8t = sum(`CD8+`),
