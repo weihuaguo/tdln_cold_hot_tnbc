@@ -20,6 +20,17 @@ print(head(smp_df))
 merge_df <- merge(annot_df, smp_df, by = "sid", all.x = T)
 #write.csv(merge_df, paste (data_dir, "20240121_2121_20ROI_merge_annotation.csv", sep = "/"))
 write.csv(merge_df, paste (data_dir, "20240123_2250_30ROI_merge_annotation.csv", sep = "/"))
+print(head(merge_df))
 
-
+sum_df <- merge_df %>%
+	group_by(sid, Cohort) %>%
+	summarize(n_roi = n()/3,
+		  area = sum(`Area µm^2`),
+		  `IL4+CD117+` =  sum(`Num IL4: CD117`),
+		  `CD117+IL4+` =  sum(`Num CD117: IL4`),
+		  `IL4+` =  sum(`Num IL4`),
+		  `CD117+` =  sum(`Num CD117`),
+	)
+print(sum_df)
+write.csv(sum_df, paste (data_dir, "20240123_2250_30ROI_merge_annotation_slide_wise.csv", sep = "/"))
 
