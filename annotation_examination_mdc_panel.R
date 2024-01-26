@@ -63,7 +63,7 @@ for (ifl in all_files) {
 				    aes(fill = phenotype)
 		) +
 		facet_wrap(~marker, nrow = 1, scales = "free_x") +
-		labs(x = "Average marker intensity (log2)", y = "Annotated cell type") +
+		labs(x = "Average marker intensity (log2)", y = "Annotated cell type", title = sid) +
 		theme_bw() +
 		theme(legend.position = "none")
 	ggsave(paste(in_dir, "/", out_prf, "_ridge.png", sep = ""), dpi = figres, width = 9, height = 4)
@@ -75,7 +75,7 @@ for (ifl in all_files) {
 		    cluster_columns = FALSE, 
 		    column_names_gp = gpar(fontsize = 12),
 #		    row_split = row_split_col,
-		    row_title = "Marker",
+		    row_title = paste("Marker\n(", sid, ")", sep = ""),
 		    column_split = df$phenotype,
 		    column_order = order(df$Class),
 		    row_names_gp = gpar(fontsize = 12),
