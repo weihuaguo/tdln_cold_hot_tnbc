@@ -74,7 +74,7 @@ for (ifl in unique(clean_df$SID)) {
 		    cluster_columns = FALSE, 
 		    column_names_gp = gpar(fontsize = 12),
 #		    row_split = row_split_col,
-		    row_title = "Marker",
+		    row_title = paste("Marker\n(", ifl, ")", sep = ""),
 		    column_split = df$phenotype,
 		    column_order = order(df$Parent),
 		    row_names_gp = gpar(fontsize = 12),
