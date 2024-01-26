@@ -24,8 +24,10 @@ for (ifl in all_files) {
 	sid <- str_split_fixed(ifl, "_ex", n = 2)[1]
 	out_prf <- paste(sid, data_type, "organized", sep = "_")
 	df <- read.csv(paste(in_dir, ifl, sep = "/"), check.names = F, row.names = 1)
+	df$phenotype <- ifelse(df$phenotype == "CD8+", "CD3+CD4-", df$phenotype)
 	print(head(df))
 	print(colnames(df))
+
 	mean_df <- as.data.frame(matrix(ncol = length(names(marker_loc)), nrow = nrow(df)))
 	colnames(mean_df) <- names(marker_loc)
 	rownames(mean_df) <- rownames(df)
