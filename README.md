@@ -20,7 +20,19 @@ Concatenate the above LOO results and implement student's t-test between cold an
 Plot volcano plot for LOO results (SF2)
 8. cell_pheno_extract.py (RT ~ 60 mins)
 Annotate the cell phenotypes and extract the usable spatial information
-9. dist_calculation.py (RT ~ 3 days) Note: Must run after cell_pheno_extract.py
-Calculat the average distance between mDC and other neighbor cells for each mDC in each slide
-10. dist_sum.py (RT ~ 30 mins) Note: Must run after dist_calculation.R
-Summarize the average distances and output the data for student's t-test
+9. annotation_examination_mdc_panel.R
+Generate the ridge plot and heatmaps of marker expression for each annotated cell type (mDC-Th panel)
+10. annotation_examination_il4_panel.R
+Generate the ridge plot and heatmaps of marker expression for each annotated cell type (MC-IL4 panel)
+11. auc_cold_hot.R
+Draw AUC curves for mast cell validation from H-DAB staining
+12. manual_calculate_cell_type_score.R
+Calulcate cell type score
+13. t_activate_prolifer_check.R
+Examine the T cell activation/profiling/differential marker expression
+14. gse88715_de.R
+Differential expression on GSE88715 dataset
+15. gse88715_timer_comp.R
+Compare TIMER 2.0 results between cold and hot cohort
+16. spatial_cluster.py
+DBSCAN for each slide with k-distance graph
