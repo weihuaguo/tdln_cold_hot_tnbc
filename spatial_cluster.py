@@ -13,16 +13,8 @@ def dbscan_cust_func(xydf, slide_name, plot_pf, wsl_vis=False, sample_weight="NO
     print("\tSetting sample weights: "+sample_weight)
     xydf['sample_weight'] = 1.0
     pheno_counts = xydf['phenotype'].value_counts()
-    if sample_weight == "OPPO":
-        xydf.loc[xydf['phenotype'] == 'Th1', 'sample_weight'] = -1.0
-        xydf.loc[xydf['phenotype'] == 'Th2', 'sample_weight'] = -1.0
-    if sample_weight == "PROP":
-        th1_weight = pheno_counts['Th2']/(pheno_counts['Th1']+pheno_counts['Th2'])
-        th2_weight = pheno_counts['Th1']/(pheno_counts['Th1']+pheno_counts['Th2'])
-        xydf.loc[xydf['phenotype'] == 'Th1', 'sample_weight'] = th1_weight
-        xydf.loc[xydf['phenotype'] == 'Th2', 'sample_weight'] = th2_weight
 
-    print("\tScaling...")  # TODO: do we need scale???
+    print("\tScaling...")
     wsl_xy = StandardScaler().fit_transform(xydf[['x','y']])
     print("\tPlotting k-distance graph for optimal eps...")
     neigh = NearestNeighbors(n_neighbors=min_pts)
@@ -57,9 +49,6 @@ def dbscan_cust_func(xydf, slide_name, plot_pf, wsl_vis=False, sample_weight="NO
     res_df = res_df.assign(dbscan_xy = labels)
     res_df['dbscan_clst'] = 'C' + res_df['dbscan_xy'].astype(str)
     res_df.to_csv(plot_pf+sample_weight+'_results.csv')
-#    print(type(labels))
-#    print(len(labels))
-#    print(res_df.head())
 
     print("\tAnalyzing cluster results...")
     res_dict['outlier_cell_num'] = res_df['dbscan_clst'].str.contains("C-").sum()
@@ -101,7 +90,6 @@ def dbscan_cust_func(xydf, slide_name, plot_pf, wsl_vis=False, sample_weight="NO
     res_dict['dc_only_cluster'] = only_mask.sum()
 
     for iclst in clst_counts['dbscan_clst'].unique().tolist():
-#        print("\t\t"+iclst)
         tmp_mask = clst_counts['dbscan_clst']==iclst
         tmp_cts = clst_counts.loc[tmp_mask]
         tmp_only_mask = tmp_cts['rel_tag'].str.contains('only')
@@ -123,7 +111,6 @@ def dbscan_cust_func(xydf, slide_name, plot_pf, wsl_vis=False, sample_weight="NO
                 clst_counts.loc[tmp_mask, 'rel_tag'] = 'equal_ths'
             else:
                 clst_counts.loc[tmp_mask, 'rel_tag'] = 'th2_domed'
-#    print(clst_counts)
     clst_counts.to_csv(plot_pf+sample_weight+'_cluster_counts.csv')
     ndc_counts = clst_counts.drop_duplicates(subset='dbscan_clst')
 
@@ -135,10 +122,7 @@ def dbscan_cust_func(xydf, slide_name, plot_pf, wsl_vis=False, sample_weight="NO
     res_dict['eq_ths_clst'] = (ndc_counts['rel_tag'] == 'equal_ths').sum()
     res_dict['th1_sum_clst'] = res_dict['dc_th1_only_clst'] + res_dict['th1_domed_clst']
     res_dict['th2_sum_clst'] = res_dict['dc_th2_only_clst'] + res_dict['th2_domed_clst']
-#    print(ndc_counts)
-#    print(clst_counts)
-#    print(res_dict)
-#    raise ValueError("STOP")
+
     if wsl_vis:
         clst_num = res_df['dbscan_clst'].value_counts().shape[0]
         if clst_num <= 20:
@@ -230,20 +214,6 @@ for itxt in allTxt:
     tmp_xy = pd.read_csv(itxt, sep = "\t")
     tmp_res_dict = dbscan_cust_func(xydf=tmp_xy, slide_name = sn, plot_pf=tmp_pf)
     merge_res_dict[tmp_res_dict['slide_name']+'_all_none'] = tmp_res_dict
-
-    tmp_res_dict = dbscan_cust_func(xydf=tmp_xy, sample_weight='OPPO', slide_name = sn, plot_pf=tmp_pf)
-    merge_res_dict[tmp_res_dict['slide_name']+'_all_oppo'] = tmp_res_dict
-
-    tmp_res_dict = dbscan_cust_func(xydf=tmp_xy, sample_weight='PROP', slide_name = sn, plot_pf=tmp_pf)
-    merge_res_dict[tmp_res_dict['slide_name']+'_all_prop'] = tmp_res_dict
-
-    tmp_opf = tmp_pf+"th1_only_"
-    tmp_res_dict = dbscan_cust_func(xydf=tmp_xy.loc[tmp_xy['phenotype']!='Th2'], slide_name = sn, plot_pf=tmp_pf)
-    merge_res_dict[tmp_res_dict['slide_name']+'_th1_only_none'] = tmp_res_dict
-    
-    tmp_opf = tmp_pf+"th2_only_"
-    tmp_res_dict = dbscan_cust_func(xydf=tmp_xy.loc[tmp_xy['phenotype']!='Th1'], slide_name = sn, plot_pf=tmp_pf)
-    merge_res_dict[tmp_res_dict['slide_name']+'_th2_only_none'] = tmp_res_dict
 
     merge_res_df = pd.DataFrame.from_dict(merge_res_dict)
     print(merge_res_df)
