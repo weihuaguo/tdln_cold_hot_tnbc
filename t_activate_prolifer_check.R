@@ -7,6 +7,7 @@ suppressMessages(library(readxl))
 suppressMessages(library(dplyr))
 suppressMessages(library(ggplot2))
 suppressMessages(library(ggpubr))
+suppressMessages(library(ggrepel))
 suppressMessages(library(rstatix))
 suppressMessages(library(tibble))
 suppressMessages(library(tidyr))
@@ -18,6 +19,8 @@ smp_ann <- as.data.frame(read_excel(paste(data_dir, "/sample_annotation.xlsx", s
 raw_df <- as.data.frame(read_excel(paste(data_dir, "/merge_final_data.xlsx", sep = "")))
 gene_ann <- as.data.frame(read_excel(paste(data_dir, "/immune_panel_cleaned_annotate.xlsx", sep = ""), 
 				     sheet = "genome"))
+de_df <- as.data.frame(read_excel(paste(data_dir, "/SD2_DE_NS_LN_list_240128.xlsx", sep = "")))
+colnames(de_df)[1] <- "gene"
 ppf <- paste(data_dir, "/clean_092021_ln_", sep = "")
 
 rownames(smp_ann) <- smp_ann$pid
@@ -41,11 +44,21 @@ print(head(gene_ann))
 
 ln_df <- raw_df[,raw_df["tissue",] == "LN"]
 colnames(ln_df) <- ln_df["patient_id",]
+# print(head(ln_df))
+avg_df <- as.data.frame(t(ln_df))
+avg_df <- gather(avg_df, "gene", "expr", colnames(avg_df)[5:ncol(avg_df)])
+avg_df$expr <- as.numeric(avg_df$expr)
+avg_df <- avg_df %>%
+	group_by(ds_subtype, gene) %>%
+	summarize(mean = mean(expr, na.rm = T))
+spr_avg_df <- spread(avg_df, "ds_subtype", "mean")
+spr_avg_df <- merge(spr_avg_df, de_df, by = "gene", all.x = T)
+print(head(spr_avg_df))
+
 ln_df <- ln_df[5:nrow(ln_df),]
 ln_df <- ln_df[,rownames(smp_ann)]
 ln_df <- ln_df[rownames(gene_ann),]
 
-print(head(ln_df))
 write.csv(ln_df, paste(ppf, "tdln_log2_norm_expr.csv", sep = ""))
 # Necessary for cor_test
 ln_df <- read.csv(paste(ppf, "tdln_log2_norm_expr.csv", sep = ""), row.names=1)
@@ -62,6 +75,18 @@ for (iss in colnames(gene_ann)) {
 	tmp_genes <- rownames(gene_ann)[gene_ann[,iss] == "+"]
 	print(length(tmp_genes))
 	print(tmp_genes)
+	print(head(gene_ann))
+	tmp_avg_df <- merge(spr_avg_df, gene_ann, by.x = "gene", by.y = "row.names", all.x = T)
+	tmp_avg_df$label <- ifelse(tmp_avg_df[,iss] == "+", tmp_avg_df$gene, NA)
+	sct_gg <- ggplot(tmp_avg_df, aes(x = COLD, y = HOT, label = label)) +
+		geom_point(aes(color = logFC)) +
+		geom_label_repel() +
+		scale_color_gradient2(midpoint = 0, low = "dodgerblue", mid = "white", high = "firebrick") +
+		labs(title = iss, x = "Average expression (Cold TDLN)", y = "Average expression (Hot TDLN)") +
+		theme_bw()
+	ggsave(paste(ppf, iss, "_scatter_plot.png", sep = ""), sct_gg, dpi = 300, 
+	       width = 4.5, height = 4.5, limitsize=FALSE)
+
 	cat("\tDirectly compare...\n")
 	tmp_df <- use_df[,tmp_genes]
 	tmp_df <- cbind(smp_ann, tmp_df)
@@ -83,8 +108,9 @@ for (iss in colnames(gene_ann)) {
 		geom_boxplot() +
 		geom_point() +
 		scale_color_manual(values=c("Cold" = "dodgerblue", "Hot" = "firebrick"))+
+		scale_y_continuous(expand = c(0.1, 0.1, 0.2, 0.1)) +
 		facet_wrap(~gene, ncol = 6, scale = "free") +
-		stat_compare_means(label = 'p.signif') +
+		stat_compare_means(label = 'p.format') +
 		labs(x = "Cohort", y = "Expression\n(log2 transformed)", color = "Cohort", title = iss) +
 		theme_bw() 
 	ggsave(paste(ppf, iss, "_boxplot.png", sep = ""), box_gg, dpi = 300, 
