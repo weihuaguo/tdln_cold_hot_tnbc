@@ -25,6 +25,10 @@ for (ifl in all_files) {
 	out_prf <- paste(sid, data_type, "organized", sep = "_")
 	df <- read.csv(paste(in_dir, ifl, sep = "/"), check.names = F, row.names = 1)
 	df$phenotype <- ifelse(df$phenotype == "CD8+", "CD3+CD4-", df$phenotype)
+	df$phenotype <- ifelse(df$phenotype == "mDC", "Mature\nDC", df$phenotype)
+	df$phenotype <- ifelse(df$phenotype == "Th1", "Th1\n\n", df$phenotype)
+
+
 	print(head(df))
 	print(colnames(df))
 
@@ -66,7 +70,7 @@ for (ifl in all_files) {
 		labs(x = "Average marker intensity (log2)", y = "Annotated cell type", title = sid) +
 		theme_bw() +
 		theme(legend.position = "none")
-	ggsave(paste(in_dir, "/", out_prf, "_ridge.png", sep = ""), dpi = figres, width = 9, height = 4)
+	ggsave(paste(in_dir, "/", out_prf, "_ridge.png", sep = ""), dpi = figres, width = 9, height = 3)
 
 	hm_obj <- Heatmap(t(scale(mean_df)),
 		    name = "Z-score (mean)",
