@@ -1,4 +1,4 @@
-st = ls())
+rm(list = ls())
 
 suppressMessages(library(ggplot2))
 suppressMessages(library(ggridges))
@@ -28,12 +28,13 @@ colnames(clean_df)[str_detect(colnames(clean_df), "mean")] <- c("IL4", "CD117")
 clean_df$SID <- str_split_fixed(clean_df$Image, "_b", n = 2)[,1]
 clean_df$ROIID <- str_c("ROI", str_split_fixed(clean_df$Image, "_ROI", n = 2)[,2])
 clean_df$phenotype[clean_df$Class == "IL4"] <- "IL4+ non-MC"
-clean_df$phenotype[clean_df$Class == "CD117"] <- "IL4- MC"
-clean_df$phenotype[is.na(clean_df$phenotype)] <- "IL4+ MC"
+clean_df$phenotype[clean_df$Class == "CD117"] <- "IL4- MC\n\n"
+clean_df$phenotype[is.na(clean_df$phenotype)] <- "IL4+ MC\n"
 write.csv(clean_df, paste(in_dir, "cleaned_used_cell_marker_mean_dataframe.csv", sep = "/"))
 
 for (ifl in unique(clean_df$SID)) {
 	cat(ifl, "\n")
+	sid <- str_split_fixed(ifl, "_ex", n = 2)[1]
 	out_prf <- paste(ifl, data_type, "organized", sep = "_")
 	df <- clean_df[clean_df$SID == ifl,]
 	cts_df <- df %>%
